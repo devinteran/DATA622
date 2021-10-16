@@ -429,6 +429,28 @@ test_table
 mean(pred_tree_test == test$Loan_Status)
 ```
 
+### linear discriminant analysis
+
+LDA does not seem to be a good approach with this data set as the points provided by the available data are not linearly seperable
+```{r}
+train%>%
+  ggplot(aes(x = log(LoanAmount), y= log(ApplicantIncome+CoapplicantIncome), color = Loan_Status)) + geom_point()
+```
+
+### lda model
+
+predictions with the LDA model are less accurate than if we just used the binary classifier Credit_History to determine weather or not a loan would be approved
+```{r}
+lda = lda(Loan_Status ~ ApplicantIncome+CoapplicantIncome+LoanAmount, data = train)
+
+lda
+```
+
+### lda test
+
+```{r}
+lda.predictions = predict(lda,test)
+```
 
 
 ### Resources:  
