@@ -21,6 +21,7 @@ library(GGally)
 library(mice)
 library(psych)
 library(visdat)
+library(tidyr)
 ```
 
 
@@ -29,12 +30,22 @@ loan_data <- read.csv('https://raw.githubusercontent.com/devinteran/DATA622/main
 ```
 
 ## Exploratory Data Analysis
-Our loan data has 13 columns, 8 of which are categorical and 5 integers.  The target variable is **Loan_status**, which can be either **Y (yes)** or **N (no)**.  This let's us know if the applicant's loan is approved.  
+Our loan data has 614 rows and 13 columns, 8 of which are categorical and 5 are numerical.  The target variable is **Loan_Status**, which can be either **Y (yes)** or **N (no)**.  This let's us know if the applicant's loan is approved. There are 7 variables that have blank values. The one with the most blank values is **Credit_History** with 50 blanks.
+
 ```{r view}
 loan_data %>% kbl() %>% kable_styling() %>% scroll_box(width = "750px", height = "250px")
+
+summary(loan_data) %>% kbl() %>% kable_styling() %>% scroll_box(width = "750px", height = "250px")
+
+missing <- loan_data %>% mutate_if(is.character, list(~na_if(.,""))) 
+
+missing%>%
+  summarise_all(list(~sum(is.na(.)))) %>%
+  gather(key="Variable", value="Number_Missing") %>%
+  arrange(desc(Number_Missing)) %>% kbl() %>% kable_styling() %>% scroll_box(width = "750px", height = "250px")
 ```
 
-### **Categorical** 
+### **Categorical Variables** 
 There are several variables which have blank values "".  These data points may have been intentionally skipped by customers from banks during the data collection process or they may just be missing.  We will handle this later on.  
 * **Loan_ID:** unique identifier    
 * **Gender:** either Male or Female or blank   
@@ -52,9 +63,9 @@ There are several variables which have blank values "".  These data points may h
 
 gender_loan_status_count <- table(loan_data$Gender,loan_data$Loan_Status)
 gender_loan_status_perct <- gender_loan_status_count
-gender_loan_status_perct[1,] <- gender_loan_status_perct[1,]/13
-gender_loan_status_perct[2,] <- gender_loan_status_perct[2,]/112
-gender_loan_status_perct[3,] <- gender_loan_status_perct[3,]/489
+gender_loan_status_perct[1,] <- round(gender_loan_status_perct[1,]/13 * 100, 2)
+gender_loan_status_perct[2,] <- round(gender_loan_status_perct[2,]/112 * 100, 2)
+gender_loan_status_perct[3,] <- round(gender_loan_status_perct[3,]/489 * 100, 2)
 
 #set column names for gender_loan_status_count
 gender_loan_status_count <- data.frame(gender_loan_status_count)
@@ -83,9 +94,9 @@ Married applicants have a higher approval rate than non married applicants.  It 
 ```{r married-tables,fig.width=7,fig.height=3}
 married_loan_status_count <- table(loan_data$Married,loan_data$Loan_Status)
 married_loan_status_perct <- married_loan_status_count
-married_loan_status_perct[1,] <- married_loan_status_perct[1,]/3
-married_loan_status_perct[2,] <- married_loan_status_perct[2,]/213
-married_loan_status_perct[3,] <- married_loan_status_perct[3,]/398
+married_loan_status_perct[1,] <- round(married_loan_status_perct[1,]/3 * 100, 2)
+married_loan_status_perct[2,] <- round(married_loan_status_perct[2,]/213 * 100, 2)
+married_loan_status_perct[3,] <- round(married_loan_status_perct[3,]/398 * 100, 2)
 
 #set column names for married_loan_status_count
 married_loan_status_count <- data.frame(married_loan_status_count)
@@ -115,11 +126,11 @@ Applicants with 2 dependents appear to have the highest loan approval rate.  It'
 ```{r dep-tables,fig.width=7,fig.height=3}
 dep_loan_status_count <- table(loan_data$Dependents,loan_data$Loan_Status)
 dep_loan_status_perct <- dep_loan_status_count
-dep_loan_status_perct[1,] <- dep_loan_status_perct[1,]/15
-dep_loan_status_perct[2,] <- dep_loan_status_perct[2,]/345
-dep_loan_status_perct[3,] <- dep_loan_status_perct[3,]/102
-dep_loan_status_perct[4,] <- dep_loan_status_perct[4,]/101
-dep_loan_status_perct[5,] <- dep_loan_status_perct[5,]/51
+dep_loan_status_perct[1,] <- round(dep_loan_status_perct[1,]/15 * 100, 2)
+dep_loan_status_perct[2,] <- round(dep_loan_status_perct[2,]/345 * 100, 2)
+dep_loan_status_perct[3,] <- round(dep_loan_status_perct[3,]/102 * 100, 2)
+dep_loan_status_perct[4,] <- round(dep_loan_status_perct[4,]/101 * 100, 2)
+dep_loan_status_perct[5,] <- round(dep_loan_status_perct[5,]/51 * 100, 2)
 
 #set column names for dep_loan_status_count
 dep_loan_status_count <- data.frame(dep_loan_status_count)
@@ -148,8 +159,8 @@ Applicants with Graduate education have a higher loan approval rate here.
 ```{r edu-tables,fig.width=7,fig.height=3}
 edu_loan_status_count <- table(loan_data$Education,loan_data$Loan_Status)
 edu_loan_status_perct <- edu_loan_status_count
-edu_loan_status_perct[1,] <- edu_loan_status_perct[1,]/480
-edu_loan_status_perct[2,] <- edu_loan_status_perct[2,]/134
+edu_loan_status_perct[1,] <- round(edu_loan_status_perct[1,]/480 * 100, 2)
+edu_loan_status_perct[2,] <- round(edu_loan_status_perct[2,]/134 * 100, 2)
 
 #set column names for edu_loan_status_count
 edu_loan_status_count <- data.frame(edu_loan_status_count)
@@ -175,9 +186,9 @@ ggplot(data=edu_loan_status_count, aes(x=Education, y=Count, fill=Loan_Status)) 
 
 selfemp_loan_status_count <- table(loan_data$Self_Employed,loan_data$Loan_Status)
 selfemp_loan_status_perct <- selfemp_loan_status_count
-selfemp_loan_status_perct[1,] <- selfemp_loan_status_perct[1,]/32
-selfemp_loan_status_perct[2,] <- selfemp_loan_status_perct[2,]/500
-selfemp_loan_status_perct[3,] <- selfemp_loan_status_perct[3,]/82
+selfemp_loan_status_perct[1,] <- round(selfemp_loan_status_perct[1,]/32  * 100, 2)
+selfemp_loan_status_perct[2,] <- round(selfemp_loan_status_perct[2,]/500  * 100, 2)
+selfemp_loan_status_perct[3,] <- round(selfemp_loan_status_perct[3,]/82  * 100, 2)
 
 #set column names for selfemp_loan_status_count
 selfemp_loan_status_count <- data.frame(selfemp_loan_status_count)
@@ -205,9 +216,9 @@ Semiurban applicants have the highest approval loan rating over rural and urban.
 ```{r proparea-tables,fig.width=7,fig.height=3}
 proparea_loan_status_count <- table(loan_data$Property_Area,loan_data$Loan_Status)
 proparea_loan_status_perct <- proparea_loan_status_count
-proparea_loan_status_perct[1,] <- proparea_loan_status_perct[1,]/179
-proparea_loan_status_perct[2,] <- proparea_loan_status_perct[2,]/233
-proparea_loan_status_perct[3,] <- proparea_loan_status_perct[3,]/202
+proparea_loan_status_perct[1,] <- round(proparea_loan_status_perct[1,]/179  * 100, 2)
+proparea_loan_status_perct[2,] <- round(proparea_loan_status_perct[2,]/233  * 100, 2)
+proparea_loan_status_perct[3,] <- round(proparea_loan_status_perct[3,]/202  * 100, 2)
 
 #set column names for proparea_loan_status_count
 proparea_loan_status_count <- data.frame(proparea_loan_status_count)
@@ -232,8 +243,8 @@ Having an a credit history that meets the guidelines appears to be extremely imp
 ```{r credit-history-tables,fig.width=7,fig.height=3}
 credhist_loan_status_count <- table(loan_data$Credit_History,loan_data$Loan_Status)
 credhist_loan_status_perct <- credhist_loan_status_count
-credhist_loan_status_perct[1,] <- credhist_loan_status_perct[1,]/89
-credhist_loan_status_perct[2,] <- credhist_loan_status_perct[2,]/475
+credhist_loan_status_perct[1,] <- round(credhist_loan_status_perct[1,]/89  * 100, 2)
+credhist_loan_status_perct[2,] <- round(credhist_loan_status_perct[2,]/475  * 100, 2)
 
 #set column names for credhist_loan_status_count
 credhist_loan_status_count <- data.frame(credhist_loan_status_count)
@@ -253,7 +264,7 @@ knitr::kable(list(t1, t2))
 ggplot(data=credhist_loan_status_count, aes(x=Credit_History, y=Count, fill=Loan_Status)) + geom_bar(stat="identity",position="dodge")
 ```
 
-### **Integers**  
+### **Numerical Variables**  
 * **ApplicantIncome:**  how much money does the applicant make?    
 * **CoapplicantIncome:** how much money does the coapplicant make?  if there is no coapplicant this is 0.      
 * **LoanAmount:** how much is the loan worth in thousands?   
@@ -290,6 +301,14 @@ c <- ggplot(denied,aes(x=ApplicantIncome,y=LoanAmount,color=Loan_Status)) + geom
 
 grid.arrange(c)
 
+```
+
+In addition, upon investigating the sum of **ApplicantIncome** and **CoapplicantIncome**, we observe that it does not appear to have much prediction power with **Loan_Status**.
+
+```{r plot-income-combined,warning = FALSE,fig.width=7,fig.height=3}
+ggplot(data = loan_data, aes(x = Loan_Status, y = ApplicantIncome+CoapplicantIncome, fill=Loan_Status)) +
+  geom_boxplot() +
+  coord_flip()
 ```
 
 #### LoanAmount Per ApplicantIncome  
