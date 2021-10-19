@@ -22,6 +22,8 @@ library(mice)
 library(psych)
 library(visdat)
 library(tidyr)
+library(caret)
+library(randomForest)
 ```
 
 
