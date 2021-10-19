@@ -29,7 +29,7 @@ library(tidyr)
 loan_data <- read.csv('https://raw.githubusercontent.com/devinteran/DATA622/main/Loan_approval.csv')
 ```
 
-## Exploratory Data Analysis
+## 1. Exploratory Data Analysis
 Our loan data has 614 rows and 13 columns, 8 of which are categorical and 5 are numerical.  The target variable is **Loan_Status**, which can be either **Y (yes)** or **N (no)**.  This let's us know if the applicant's loan is approved. There are 7 variables that have blank values. The one with the most blank values is **Credit_History** with 50 blanks.
 
 ```{r view}
@@ -383,7 +383,33 @@ train <- clean_loan_data[c(indices),]
 test <- clean_loan_data[-c(indices),]
 ```
 
-## Decision Trees  
+## 2. Linear Discriminant Analysis
+
+LDA does not seem to be a good approach with this data set as the points provided by the available data are not linearly seperable
+```{r}
+train%>%
+  ggplot(aes(x = log(LoanAmount), y= log(ApplicantIncome+CoapplicantIncome), color = Loan_Status)) + geom_point()
+```
+
+### lda model
+
+predictions with the LDA model are less accurate than if we just used the binary classifier Credit_History to determine weather or not a loan would be approved
+```{r}
+lda = lda(Loan_Status ~ ApplicantIncome+CoapplicantIncome+LoanAmount, data = train)
+
+lda
+```
+
+### lda test
+
+```{r}
+lda.predictions = predict(lda,test)
+```
+
+## 3. K-nearest Neighbor
+
+
+## 4. Decision Trees  
 Now we will use a decision tree to see how well it will perform on our data.    
 * Our decision tree starts by splitting users based on their Credit_History.  This makes sense based on our exploratory data analysis.  
 * Other variables used in the decision tree include LoanAmount, PropertyArea, CoapplicantIncome 
@@ -429,34 +455,81 @@ test_table
 mean(pred_tree_test == test$Loan_Status)
 ```
 
-### linear discriminant analysis
+## 5. Random Forests
+Now we will develop a random forest model to see how well it will performs with our data. 
+Parameters for a random forest include:
+**mtry** : Number of variables randomly sampled as candidates at each split. Note that the default values are different for classification (sqrt(p) where p is number of variables in x) and regression (p/3)
+**ntree** : Number of trees to grow. This should not be set to too small a number, to ensure that every input row gets predicted at least a few times
 
-LDA does not seem to be a good approach with this data set as the points provided by the available data are not linearly seperable
-```{r}
-train%>%
-  ggplot(aes(x = log(LoanAmount), y= log(ApplicantIncome+CoapplicantIncome), color = Loan_Status)) + geom_point()
+Our initial model will have default parameters of mtry=sqrt(13) and ntree=500. Let's drop **Loan_ID** since it will not provide value to the model. 
+```{r rf-default}
+#drop loan id
+train <- subset(train, select=-c(Loan_ID))
+test <- subset(test, select=-c(Loan_ID))
+
+# Create model with default parameters
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+mtry <- sqrt(ncol(train))
+tunegrid <- expand.grid(.mtry=mtry)
+rf_default <- train(Loan_Status~., data=train, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control)
+print(rf_default)
 ```
 
-### lda model
-
-predictions with the LDA model are less accurate than if we just used the binary classifier Credit_History to determine weather or not a loan would be approved
-```{r}
-lda = lda(Loan_Status ~ ApplicantIncome+CoapplicantIncome+LoanAmount, data = train)
-
-lda
+Our inital model has accuracy of about 80%. Let's see if we can improve accuracy by finding an optimal mtry value. We will test different mtry values 1-10 by using gridsearch. We see from our results that the optimal mtry value for accuracy is 2.
+```{r rf-mtry}
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+set.seed(123)
+tunegrid <- expand.grid(.mtry=c(1:10))
+rf_gridsearch <- train(Loan_Status~., data=train, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control)
+print(rf_gridsearch)
+plot(rf_gridsearch)
 ```
 
-### lda test
-
-```{r}
-lda.predictions = predict(lda,test)
+Next let's find the optimal value for ntree. Again we'll use gridsearch to test different ntree values. It's evident from our results that optimal ntree value for accuracy is 1500.
+```{r rf-ntree}
+control <- trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+tunegrid <- expand.grid(.mtry=2)
+modellist <- list()
+for (ntree in c(500, 1000, 1500, 2000, 2500)) {
+  set.seed(124)
+	fit <- train(Loan_Status~., data=train, method="rf", metric="Accuracy", tuneGrid=tunegrid, trControl=control, ntree=ntree)
+	key <- toString(ntree)
+	modellist[[key]] <- fit
+}
+# compare results
+results <- resamples(modellist)
+summary(results)
+dotplot(results)
 ```
+
+Our final random forest model will have mtry=2 and ntree=1500.
+```{r rf-final}
+rf_final <- randomForest(Loan_Status ~ ., 
+                        data = train, 
+                        ntree = 1500, 
+                        mtry = 2,
+                        importance = TRUE,
+                        proximity = TRUE)
+
+print(rf_final)
+#variable importance
+round(importance(rf_final), 2)
+
+prediction <-predict(rf_final, test)
+confusionMatrix(prediction, test$Loan_Status)
+```
+Accuracy of our final random forest model is about 83% on the test data with 19 instances misclassified. 2 are false negatives and 17 are false positives. Credit_history is the most important feature folowwed by ApplicantIncome and LoanAmtPerSalary.
+
+
+## 6. Model Performance
+
 
 
 ### Resources:  
 * https://www.r-bloggers.com/2015/10/imputing-missing-data-with-r-mice-package/  
 * https://daviddalpiaz.github.io/r4sl/trees.html
 * https://www.youtube.com/watch?v=YPz2J5lHeVM
+* https://machinelearningmastery.com/tune-machine-learning-algorithms-in-r/
 
 
 
