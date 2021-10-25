@@ -505,7 +505,7 @@ ctrl <- trainControl(method = 'repeatedcv', repeats = 11)
 ### lda model results
 
 ```{r}
-lda.fit <- train(Loan_Status ~ .,
+lda.fit <- train(Loan_Status ~ ApplicantIncome + LoanAmount,
              data = train,
              method = 'lda',
              trControl = ctrl
