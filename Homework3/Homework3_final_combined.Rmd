@@ -593,9 +593,8 @@ Accuracy is 78.69% while balanced accuracy is only 67.95%.
 
 Now we will use a decision tree to see how well it will perform on our data.\
 \* Our decision tree starts by splitting users based on their Credit\_History. This makes sense based on our exploratory data analysis.\
-\* Other variables used in the decision tree include LoanAmount, PropertyArea
+\* Other variables used in the decision tree include LoanAmount, PropertyArea, etc.
 
-\* It appears that after the initial split, the branch on the left after the root, which splits on LoanAmt \< 136.5 has the same outcome on both leaves. Both outcomes are N. This might show signs of overfitting. We will address this later.
 
 ```{r decision-tree,fig.width=6,fig.height=6}
 loan_tree = tree(Loan_Status ~., train)
@@ -608,7 +607,7 @@ title(main = "Unpruned Decision Tree")
 
 #### Training Data
 
-Now we will use our model to see how it performs on the training data. We see that the model predicted **Loan\_Status** with an accuracy of 83%. 78 instances were incorrectly classified.
+Now we will use our model to see how it performs on the training data. We see that the model predicted **Loan\_Status** with an accuracy of ~83%. 81 instances were incorrectly classified.
 
 ```{r tree-test}
 pred_tree_train <- predict(loan_tree,train,type="class")
@@ -619,7 +618,7 @@ mean(pred_tree_train == train$Loan_Status)
 
 ### Cross-validation for better performance
 
-The first version of our model was a full, unpruned tree. Now we are going to prune it back to get the optimal tree using cross validation. We have plotted the number of misclassifications with the different trees. As we can see, the trees with size 3-6 have the fewest misclassifications. We will choose size 3 to have the fewest misclassifications and the least complex model.
+The first version of our model was a full, unpruned tree. Now we are going to prune it back to get the optimal tree using cross validation. We have plotted the number of misclassifications with the different trees. As we can see, the trees with size 2-4 have the fewest misclassifications. We will choose size 4 to have the fewest misclassifications.
 
 ```{r cv-trees}
 set.seed(2311)
@@ -638,7 +637,7 @@ text(loan_tree_pruned)
 
 ### Testing Data
 
-Now let's see how our pruned performs on our testing data. The accuracy for our test data was 81%, which was almost the same as our training data. 21 of the total observations were misclassified.
+Now let's see how our pruned performs on our testing data. The accuracy for our test data was ~82%, which was almost the same as our training data. 21 of the total observations were misclassified.
 
 ```{r confusion-matrix}
 pred_tree_test  <- predict(loan_tree_pruned,test, type="class")
