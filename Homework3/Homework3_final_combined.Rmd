@@ -505,7 +505,7 @@ ctrl <- trainControl(method = 'repeatedcv', repeats = 11)
 ### lda model results
 
 ```{r}
-lda.fit <- train(Loan_Status ~ ApplicantIncome + LoanAmount,
+lda.fit <- train(Loan_Status ~ TotalIncome + LoanAmount,
              data = train,
              method = 'lda',
              trControl = ctrl
@@ -595,7 +595,6 @@ Now we will use a decision tree to see how well it will perform on our data.\
 \* Our decision tree starts by splitting users based on their Credit\_History. This makes sense based on our exploratory data analysis.\
 \* Other variables used in the decision tree include LoanAmount, PropertyArea, etc.
 
-
 ```{r decision-tree,fig.width=6,fig.height=6}
 loan_tree = tree(Loan_Status ~., train)
 plot(loan_tree)
@@ -607,7 +606,7 @@ title(main = "Unpruned Decision Tree")
 
 #### Training Data
 
-Now we will use our model to see how it performs on the training data. We see that the model predicted **Loan\_Status** with an accuracy of ~83%. 81 instances were incorrectly classified.
+Now we will use our model to see how it performs on the training data. We see that the model predicted **Loan\_Status** with an accuracy of \~83%. 81 instances were incorrectly classified.
 
 ```{r tree-test}
 pred_tree_train <- predict(loan_tree,train,type="class")
@@ -637,7 +636,7 @@ text(loan_tree_pruned)
 
 ### Testing Data
 
-Now let's see how our pruned performs on our testing data. The accuracy for our test data was ~82%, which was almost the same as our training data. 21 of the total observations were misclassified.
+Now let's see how our pruned performs on our testing data. The accuracy for our test data was \~82%, which was almost the same as our training data. 21 of the total observations were misclassified.
 
 ```{r confusion-matrix}
 pred_tree_test  <- predict(loan_tree_pruned,test, type="class")
@@ -750,13 +749,13 @@ Accuracy of our final random forest model is about 83% on the test data with 19 
 
 |       Metric      |   LDA  | K-Nearest Neighbor (KNN) | Decision Trees | Random Forest |
 |:-----------------:|:------:|:------------------------:|:--------------:|:-------------:|
-|      Accuracy     | 0.8374 |          0.7869          |     0.8293     |     0.8374    |
-| Balanced Accuracy | 0.7066 |          0.6795          |     0.7010     |     0.7066    |
-|    Sensitivity    | 0.4242 |          0.3947          |     0.4242     |     0.4242    |
+|      Accuracy     | 0.7317 |          0.7869          |     0.8293     |     0.8374    |
+| Balanced Accuracy | 0.5000 |          0.6795          |     0.7010     |     0.7066    |
+|    Sensitivity    |    0   |          0.3947          |     0.4242     |     0.4242    |
 
 : Model Performance Matrix
 
-Notice that the sensitivity among LDA, Decision Trees, and RF is the same at 42.42%. It's surprising to see that LDA and Random Forest ended up having the highest accuracy, which is usually the go-to metric to go for in an unbalanced dataset with the binary response that are not 50/50.
+Notice that the sensitivity between Decision Trees, and RF is the same at 42.42%. It's surprising to see that LDA and Random Forest ended up having the highest accuracy, which is usually the go-to metric to go for in an unbalanced dataset with the binary response that are not 50/50. The model we picked is Random Forest.
 
 ### Resources:
 
